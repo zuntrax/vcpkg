@@ -22,41 +22,38 @@ function(configure_qt)
         )
     endif()
 
-    message(STATUS "Configuring ${TARGET_TRIPLET}-rel")
-    file(MAKE_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel)
-    vcpkg_execute_required_process(
-        COMMAND "${_csc_SOURCE_PATH}/configure.bat" ${_csc_OPTIONS} ${_csc_OPTIONS_RELEASE}
-            -release
-            -prefix ${CURRENT_PACKAGES_DIR}
-            -hostbindir ${CURRENT_PACKAGES_DIR}/tools/qt5
-            -archdatadir ${CURRENT_PACKAGES_DIR}/share/qt5
-            -datadir ${CURRENT_PACKAGES_DIR}/share/qt5
-            -plugindir ${CURRENT_PACKAGES_DIR}/plugins
-            -qmldir ${CURRENT_PACKAGES_DIR}/qml
-            -I ${CURRENT_INSTALLED_DIR}/include
-            -L ${CURRENT_INSTALLED_DIR}/lib
-            -platform ${PLATFORM}
-        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel
-        LOGNAME config-${TARGET_TRIPLET}-rel
-    )
-    message(STATUS "Configuring ${TARGET_TRIPLET}-rel done")
+    foreach(BUILDTYPE "release" "debug")
+        if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL BUILDTYPE)
 
-    message(STATUS "Configuring ${TARGET_TRIPLET}-dbg")
-    file(MAKE_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg)
-    vcpkg_execute_required_process(
-        COMMAND "${_csc_SOURCE_PATH}/configure.bat" ${_csc_OPTIONS} ${_csc_OPTIONS_DEBUG}
-            -debug
-            -prefix ${CURRENT_PACKAGES_DIR}/debug
-            -hostbindir ${CURRENT_PACKAGES_DIR}/debug/tools/qt5
-            -archdatadir ${CURRENT_PACKAGES_DIR}/debug/share/qt5
-            -datadir ${CURRENT_PACKAGES_DIR}/debug/share/qt5
-            -plugindir ${CURRENT_PACKAGES_DIR}/debug/plugins
-            -qmldir ${CURRENT_PACKAGES_DIR}/debug/qml
-            -I ${CURRENT_INSTALLED_DIR}/include
-            -L ${CURRENT_INSTALLED_DIR}/debug/lib
-            -platform ${PLATFORM}
-        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg
-        LOGNAME config-${TARGET_TRIPLET}-dbg
-    )
-    message(STATUS "Configuring ${TARGET_TRIPLET}-dbg done")
+            if(BUILDTYPE STREQUAL "debug")
+                set(SHORT_BUILDTYPE "dbg")
+                set(CURRENT_PACKAGES_BUILDTYPE_DIR "${CURRENT_PACKAGES_DIR}/debug")
+                set(BUILDTYPE_csc_OPTIONS ${_csc_OPTIONS_DEBUG})
+            else()
+                set(SHORT_BUILDTYPE "rel")
+                set(CURRENT_PACKAGES_BUILDTYPE_DIR "${CURRENT_PACKAGES_DIR}")
+                set(BUILDTYPE_csc_OPTIONS ${_csc_OPTIONS_RELEASE})
+            endif()
+
+            message(STATUS "Configuring ${TARGET_TRIPLET}-${SHORT_BUILDTYPE}")
+            file(MAKE_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-${SHORT_BUILDTYPE})
+            vcpkg_execute_required_process(
+                COMMAND "${_csc_SOURCE_PATH}/configure.bat" ${_csc_OPTIONS} ${BUILDTYPE_csc_OPTIONS}
+                    -${BUILDTYPE}
+                    -prefix ${CURRENT_PACKAGES_BUILDTYPE_DIR}
+                    -hostbindir ${CURRENT_PACKAGES_BUILDTYPE_DIR}/tools/qt5
+                    -archdatadir ${CURRENT_PACKAGES_BUILDTYPE_DIR}/share/qt5
+                    -datadir ${CURRENT_PACKAGES_BUILDTYPE_DIR}/share/qt5
+                    -plugindir ${CURRENT_PACKAGES_BUILDTYPE_DIR}/plugins
+                    -qmldir ${CURRENT_PACKAGES_BUILDTYPE_DIR}/qml
+                    -I ${CURRENT_INSTALLED_DIR}/include
+                    -L ${CURRENT_INSTALLED_DIR}/lib
+                    -platform ${PLATFORM}
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-${SHORT_BUILDTYPE}
+                LOGNAME config-${TARGET_TRIPLET}-${SHORT_BUILDTYPE}
+            )
+            message(STATUS "Configuring ${TARGET_TRIPLET}-${SHORT_BUILDTYPE} done")
+
+        endif()
+    endforeach()
 endfunction()

@@ -14,32 +14,36 @@ function(install_qt)
     set(ENV{PATH} "${PYTHON3_EXE_PATH};$ENV{PATH}")
     set(_path "$ENV{PATH}")
 
-    message(STATUS "Package ${TARGET_TRIPLET}-rel")
-    set(ENV{PATH} "${CURRENT_INSTALLED_DIR}/bin;${_path}")
-    vcpkg_execute_required_process(
-        COMMAND ${JOM} /J ${JOBS}
-        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel
-        LOGNAME build-${TARGET_TRIPLET}-rel
-    )
-    vcpkg_execute_required_process(
-        COMMAND ${JOM} /J ${JOBS} install
-        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-rel
-        LOGNAME package-${TARGET_TRIPLET}-rel
-    )
-    message(STATUS "Package ${TARGET_TRIPLET}-rel done")
+    foreach(BUILDTYPE "release" "debug")
+        if(NOT DEFINED VCPKG_BUILD_TYPE OR VCPKG_BUILD_TYPE STREQUAL BUILDTYPE)
 
-    message(STATUS "Package ${TARGET_TRIPLET}-dbg")
-    set(ENV{PATH} "${CURRENT_INSTALLED_DIR}/debug/bin;${_path}")
-    vcpkg_execute_required_process(
-        COMMAND ${JOM} /J ${JOBS}
-        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg
-        LOGNAME build-${TARGET_TRIPLET}-dbg
-    )
-    vcpkg_execute_required_process(
-        COMMAND ${JOM} /J ${JOBS} install
-        WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-dbg
-        LOGNAME package-${TARGET_TRIPLET}-dbg
-    )
+            if(BUILDTYPE STREQUAL "debug")
+                set(SHORT_BUILDTYPE "dbg")
+                set(CURRENT_INSTALLED_BINARY_DIR "${CURRENT_INSTALLED_DIR}/debug/bin")
+            else()
+                set(SHORT_BUILDTYPE "rel")
+                set(CURRENT_INSTALLED_BINARY_DIR "${CURRENT_INSTALLED_DIR}/bin")
+            endif()
+
+            set(ENV{PATH} "${CURRENT_INSTALLED_BINARY_DIR};${_path}")
+            message(STATUS "Build ${TARGET_TRIPLET}-${SHORT_BUILDTYPE}")
+            vcpkg_execute_required_process(
+                COMMAND ${JOM} /J ${JOBS}
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-${SHORT_BUILDTYPE}
+                LOGNAME build-${TARGET_TRIPLET}-${SHORT_BUILDTYPE}
+            )
+            message(STATUS "Build ${TARGET_TRIPLET}-${SHORT_BUILDTYPE} done")
+
+            message(STATUS "Package ${TARGET_TRIPLET}-${SHORT_BUILDTYPE}")
+            vcpkg_execute_required_process(
+                COMMAND ${JOM} /J ${JOBS} install
+                WORKING_DIRECTORY ${CURRENT_BUILDTREES_DIR}/${TARGET_TRIPLET}-${SHORT_BUILDTYPE}
+                LOGNAME package-${TARGET_TRIPLET}-${SHORT_BUILDTYPE}
+            )
+            message(STATUS "Package ${TARGET_TRIPLET}-${SHORT_BUILDTYPE} done")
+
+        endif()
+    endforeach()
+
     set(ENV{PATH} "${_path}")
-    message(STATUS "Package ${TARGET_TRIPLET}-dbg done")
 endfunction()
